@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BBB Muay Thai">
+<meta name="theme-color" content="#0d0d0d">
+<title>Built By Borch — Muay Thai</title>
+
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --accent: #e94560;
+    --accent2: #ff6b6b;
+    --text: #f0f0f0;
+    --muted: #888;
+    --green: #2ecc71;
+    --blue: #3498db;
+    --yellow: #f39c12;
+    --radius: 12px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── NAVBAR ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(13,13,13,0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: calc(var(--safe-top) + 12px) 16px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid #2a2a2a;
+  }
+  nav .logo { font-size: 15px; font-weight: 800; letter-spacing: 1px; color: var(--accent); }
+  nav .logo span { color: var(--text); font-weight: 400; }
+  nav .timer-btn {
+    background: var(--accent); border: none; color: white;
+    font-size: 13px; font-weight: 700; padding: 7px 14px;
+    border-radius: 20px; cursor: pointer; letter-spacing: 0.5px;
+  }
+
+  /* ── PAGES ── */
+  .page { display: none; padding-top: calc(var(--safe-top) + 60px); padding-bottom: calc(var(--safe-bottom) + 80px); min-height: 100vh; }
+  .page.active { display: block; }
+
+  /* ── BOTTOM TAB BAR ── */
+  .tabbar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(13,13,13,0.97);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid #2a2a2a;
+    display: flex;
+    padding-bottom: var(--safe-bottom);
+  }
+  .tab {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 10px 0 8px; cursor: pointer; border: none; background: none;
+    color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: 0.3px;
+    transition: color 0.2s;
+  }
+  .tab.active { color: var(--accent); }
+  .tab svg { width: 22px; height: 22px; margin-bottom: 3px; }
+
+  /* ── HOME PAGE ── */
+  .home-header {
+    padding: 24px 16px 16px;
+    background: linear-gradient(135deg, #1a0a0e 0%, #1a1a1a 100%);
+  }
+  .home-title { font-size: 28px; font-weight: 900; line-height: 1.1; }
+  .home-title span { color: var(--accent); }
+  .home-sub { color: var(--muted); font-size: 13px; margin-top: 6px; }
+
+  .week-grid { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .day-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: border-color 0.2s, transform 0.1s;
+    -webkit-user-select: none;
+  }
+  .day-card:active { transform: scale(0.98); }
+  .day-card.active-day { border-color: var(--accent); }
+  .day-dot {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.5px; flex-shrink: 0;
+  }
+  .day-dot.rest { background: #2a2a2a; color: var(--muted); }
+  .day-dot.club { background: rgba(233,69,96,0.15); color: var(--accent); }
+  .day-dot.fight { background: rgba(52,152,219,0.15); color: var(--blue); }
+  .day-dot.solo { background: rgba(46,204,113,0.15); color: var(--green); }
+  .day-info { flex: 1; }
+  .day-name { font-size: 15px; font-weight: 700; }
+  .day-type { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .day-badge {
+    font-size: 10px; font-weight: 700; padding: 3px 8px;
+    border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge-rest { background: #2a2a2a; color: var(--muted); }
+  .badge-mid { background: rgba(233,69,96,0.15); color: var(--accent); }
+  .badge-high { background: rgba(52,152,219,0.15); color: var(--blue); }
+  .badge-max { background: var(--accent); color: white; }
+  .badge-green { background: rgba(46,204,113,0.15); color: var(--green); }
+
+  /* ── DAY DETAIL ── */
+  .detail-header {
+    background: linear-gradient(135deg, #1a0a0e 0%, #1a1a1a 100%);
+    padding: 20px 16px 16px;
+  }
+  .back-btn {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--accent); font-size: 14px; font-weight: 600;
+    cursor: pointer; border: none; background: none; padding: 0; margin-bottom: 14px;
+  }
+  .back-btn svg { width: 18px; height: 18px; }
+  .detail-day { font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; }
+  .detail-title { font-size: 22px; font-weight: 900; margin-top: 4px; line-height: 1.2; }
+
+  .detail-body { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+  .section-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid #2a2a2a;
+  }
+  .section-header {
+    padding: 12px 16px;
+    background: var(--surface2);
+    font-size: 11px; font-weight: 800; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--muted);
+    border-bottom: 1px solid #2a2a2a;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-header .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .section-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+
+  .circuit-box {
+    background: #111;
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 14px;
+    font-family: "SF Mono", "Courier New", monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #ccc;
+    white-space: pre-wrap;
+  }
+
+  .info-box {
+    padding: 11px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .info-box.red { background: rgba(233,69,96,0.1); color: #f0a0b0; border: 1px solid rgba(233,69,96,0.2); }
+  .info-box.blue { background: rgba(52,152,219,0.1); color: #90c8f0; border: 1px solid rgba(52,152,219,0.2); }
+  .info-box.green { background: rgba(46,204,113,0.1); color: #90e0a8; border: 1px solid rgba(46,204,113,0.2); }
+  .info-box.yellow { background: rgba(243,156,18,0.1); color: #f0cc80; border: 1px solid rgba(243,156,18,0.2); }
+
+  .bullet-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    font-size: 14px; line-height: 1.5; color: var(--text);
+  }
+  .bullet-item::before { content: "▸"; color: var(--accent); font-size: 12px; margin-top: 2px; flex-shrink: 0; }
+
+  /* Checklist */
+  .check-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #222;
+    cursor: pointer;
+    -webkit-user-select: none;
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-box {
+    width: 22px; height: 22px; border-radius: 6px;
+    border: 2px solid #444; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    margin-top: 1px;
+  }
+  .check-item.done .check-box { background: var(--green); border-color: var(--green); }
+  .check-item.done .check-box::after { content: "✓"; color: white; font-size: 13px; font-weight: 800; }
+  .check-item.done .check-text { color: var(--muted); text-decoration: line-through; }
+  .check-text { font-size: 14px; line-height: 1.4; flex: 1; }
+
+  /* ── TIMER PAGE ── */
+  .timer-page { padding: 16px; }
+  .timer-settings {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .setting-label { font-size: 14px; font-weight: 600; }
+  .setting-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .stepper { display: flex; align-items: center; gap: 12px; }
+  .stepper-btn {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: var(--surface2); border: none; color: var(--text);
+    font-size: 20px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-weight: 300;
+  }
+  .stepper-val { font-size: 18px; font-weight: 800; min-width: 40px; text-align: center; }
+
+  .timer-display {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 32px 16px;
+    text-align: center;
+    margin-bottom: 16px;
+    border: 1px solid #2a2a2a;
+  }
+  .timer-phase { font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .timer-phase.work { color: var(--accent); }
+  .timer-phase.rest { color: var(--blue); }
+  .timer-time { font-size: 80px; font-weight: 900; line-height: 1; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+  .timer-round { font-size: 14px; color: var(--muted); margin-top: 12px; font-weight: 600; }
+  .timer-progress {
+    width: 100%; height: 4px; background: #2a2a2a;
+    border-radius: 2px; margin-top: 20px; overflow: hidden;
+  }
+  .timer-progress-bar {
+    height: 100%; background: var(--accent); border-radius: 2px;
+    transition: width 1s linear, background 0.3s;
+  }
+  .timer-progress-bar.rest-bar { background: var(--blue); }
+
+  .timer-controls { display: flex; gap: 12px; }
+  .timer-main-btn {
+    flex: 1; height: 56px; border-radius: var(--radius);
+    border: none; font-size: 16px; font-weight: 800;
+    cursor: pointer; letter-spacing: 0.5px;
+    background: var(--accent); color: white;
+  }
+  .timer-main-btn.paused { background: var(--green); }
+  .timer-reset-btn {
+    width: 56px; height: 56px; border-radius: var(--radius);
+    border: none; background: var(--surface); color: var(--text);
+    font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+
+  .round-dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 16px; }
+  .round-dot { width: 10px; height: 10px; border-radius: 50%; background: #2a2a2a; transition: background 0.3s; }
+  .round-dot.done { background: var(--green); }
+  .round-dot.current { background: var(--accent); }
+
+  /* ── KPI PAGE ── */
+  .kpi-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin: 0 16px 12px;
+    border-left: 3px solid var(--accent);
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .kpi-week {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.5px;
+    color: var(--accent); text-transform: uppercase; min-width: 44px; margin-top: 2px;
+  }
+  .kpi-text { font-size: 14px; line-height: 1.5; }
+  .kpi-card.blue { border-color: var(--blue); }
+  .kpi-card.blue .kpi-week { color: var(--blue); }
+  .kpi-card.green { border-color: var(--green); }
+  .kpi-card.green .kpi-week { color: var(--green); }
+  .kpi-card.yellow { border-color: var(--yellow); }
+  .kpi-card.yellow .kpi-week { color: var(--yellow); }
+
+  .elbow-section {
+    margin: 0 16px 12px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid #2a2a2a;
+  }
+  .elbow-header {
+    background: rgba(233,69,96,0.12);
+    padding: 12px 16px;
+    font-size: 12px; font-weight: 800; letter-spacing: 1px;
+    color: var(--accent); text-transform: uppercase;
+    border-bottom: 1px solid #2a2a2a;
+  }
+  .elbow-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+
+  /* Scrollable */
+  .scroll-area { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Section title in KPI page */
+  .page-section-title {
+    padding: 20px 16px 10px;
+    font-size: 22px; font-weight: 900;
+  }
+  .page-section-title span { color: var(--accent); }
+  .page-sub { padding: 0 16px 16px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">BUILT BY <span>BORCH</span></div>
+  <button class="timer-btn" onclick="showTimer()">⏱ TIMER</button>
+</nav>
+
+<!-- TAB BAR -->
+<div class="tabbar">
+  <button class="tab active" id="tab-home" onclick="switchTab('home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Uge
+  </button>
+  <button class="tab" id="tab-timer" onclick="switchTab('timer')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Timer
+  </button>
+  <button class="tab" id="tab-kpi" onclick="switchTab('kpi')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Mål
+  </button>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     HOME PAGE
+════════════════════════════════════════════════ -->
+<div class="page active" id="page-home">
+  <div class="home-header">
+    <div class="home-title"><span>Muay Thai</span><br>Træningsprogram</div>
+    <div class="home-sub">Vælg en dag for at se detaljer</div>
+  </div>
+  <div class="week-grid">
+    <div class="day-card active-day" onclick="showDay('mandag')">
+      <div class="day-dot club">MAN</div>
+      <div class="day-info">
+        <div class="day-name">Mandag</div>
+        <div class="day-type">Klub + Eksplosiv Kondition</div>
+      </div>
+      <div class="day-badge badge-mid">Middel</div>
+    </div>
+    <div class="day-card" onclick="showDay('tirsdag')">
+      <div class="day-dot rest">TIR</div>
+      <div class="day-info">
+        <div class="day-name">Tirsdag</div>
+        <div class="day-type">REST / Aktiv Restitution</div>
+      </div>
+      <div class="day-badge badge-rest">Lav</div>
+    </div>
+    <div class="day-card" onclick="showDay('onsdag')">
+      <div class="day-dot club">ONS</div>
+      <div class="day-info">
+        <div class="day-name">Onsdag</div>
+        <div class="day-type">Klub + Eksplosiv Kondition</div>
+      </div>
+      <div class="day-badge badge-mid">Middel</div>
+    </div>
+    <div class="day-card" onclick="showDay('torsdag')">
+      <div class="day-dot fight">TOR</div>
+      <div class="day-info">
+        <div class="day-name">Torsdag</div>
+        <div class="day-type">Klub — Fight Team Fokus</div>
+      </div>
+      <div class="day-badge badge-high">Høj</div>
+    </div>
+    <div class="day-card" onclick="showDay('fredag')">
+      <div class="day-dot fight">FRE</div>
+      <div class="day-info">
+        <div class="day-name">Fredag</div>
+        <div class="day-type">15 Runder Sparring</div>
+      </div>
+      <div class="day-badge badge-max">MAX</div>
+    </div>
+    <div class="day-card" onclick="showDay('lordag')">
+      <div class="day-dot solo">LØR</div>
+      <div class="day-info">
+        <div class="day-name">Lørdag</div>
+        <div class="day-type">Solo Kondition + Teknik</div>
+      </div>
+      <div class="day-badge badge-green">Middel</div>
+    </div>
+    <div class="day-card" onclick="showDay('sondag')">
+      <div class="day-dot rest">SØN</div>
+      <div class="day-info">
+        <div class="day-name">Søndag</div>
+        <div class="day-type">REST</div>
+      </div>
+      <div class="day-badge badge-rest">Lav</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     DAY DETAIL PAGES
+════════════════════════════════════════════════ -->
+
+<!-- MANDAG -->
+<div class="page" id="page-mandag">
+  <div class="detail-header">
+    <button class="back-btn" onclick="goHome()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Tilbage
+    </button>
+    <div class="detail-day">Mandag</div>
+    <div class="detail-title">Klub + Eksplosiv Kondition</div>
+  </div>
+  <div class="detail-body">
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>KLUBTRÆNING</div>
+      <div class="section-body">
+        <div class="info-box blue">Følg instruktørens program 100%. Teknik og timing er fokus.</div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>EKSPLOSIV KONDITION — 20–25 MIN</div>
+      <div class="section-body">
+        <div class="bullet-item">Post-træning. Hvert rep er maks indsats — ikke cardio-tempo.</div>
+        <div class="circuit-box">5 RUNDER — 40 sek arbejde / 20 sek pause
+
+  1.  Box jumps (eller jump squats)
+  2.  Explosive burpees (sprint opad)
+  3.  Med. bold slam mod gulv (3–4 kg)
+  4.  Sprint på stedet (knæ op, maks)
+  5.  Explosive push-up (hænderne letter)
+
+Pause: 90 sek mellem runder</div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>GOLF-ALBUE PROTOKOL</div>
+      <div class="section-body">
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Wrist flexor stretch: 3 x 30 sek</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Eccentric wrist curl (0.5–2 kg): 3 x 15 — LANGSOMT ned</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Ingen tunge rows eller pull-downs</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Is 10 min på albuen hvis øm</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TIRSDAG -->
+<div class="page" id="page-tirsdag">
+  <div class="detail-header">
+    <button class="back-btn" onclick="goHome()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Tilbage
+    </button>
+    <div class="detail-day">Tirsdag</div>
+    <div class="detail-title">REST / Aktiv Restitution</div>
+  </div>
+  <div class="detail-body">
+    <div class="info-box green" style="margin: 0">Dette er ikke en off-dag. Det er en restitutionsdag med formål.</div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>AKTIV RESTITUTION</div>
+      <div class="section-body">
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">30–45 min gang eller let cykling</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">10 min mobilitet: hofter, skuldre, thorax-rotation</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Foam rolling: lægge, IT-bånd, quad, øvre ryg</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Kold/varm bruser (3 x skift) hvis kroppen er tung</div></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>MENTAL FORBEREDELSE</div>
+      <div class="section-body">
+        <div class="bullet-item">Notér ét teknisk fokuspunkt du vil teste i ugens sparringer. Skriv det ned nu.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ONSDAG -->
+<div class="page" id="page-onsdag">
+  <div class="detail-header">
+    <button class="back-btn" onclick="goHome()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Tilbage
+    </button>
+    <div class="detail-day">Onsdag</div>
+    <div class="detail-title">Klub + Eksplosiv Kondition</div>
+  </div>
+  <div class="detail-body">
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>KLUBTRÆNING</div>
+      <div class="section-body">
+        <div class="info-box blue">Bring dit tekniske fokuspunkt fra tirsdag ind i kombinationer.</div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>EKSPLOSIV KONDITION — 20 MIN</div>
+      <div class="section-body">
+        <div class="circuit-box">EMOM x 12 MINUTTER
+
+  Min 1:  8 x jump squats
+  Min 2:  10 x explosive step-up
+          (5 pr. ben, tung box)
+  Min 3:  8 x burpee broad jump
+  Min 4:  12 x knæløft sprint
+          (6 pr. ben, maks tempo)
+
+— Gentag 3x —
+
+Progression: +2 reps pr. øvelse fra uge 2</div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>GOLF-ALBUE PROTOKOL</div>
+      <div class="section-body">
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Eccentric wrist curl (0.5–2 kg): 3 x 15</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Wrist extensor stretch: 3 x 30 sek</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TORSDAG -->
+<div class="page" id="page-torsdag">
+  <div class="detail-header">
+    <button class="back-btn" onclick="goHome()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Tilbage
+    </button>
+    <div class="detail-day">Torsdag</div>
+    <div class="detail-title">Klub — Fight Team Fokus</div>
+  </div>
+  <div class="detail-body">
+    <div class="info-box red" style="margin: 0">Følg trænerens program 100%. Din rolle: eksekver — ikke spørg.</div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>MENTALT INTENT</div>
+      <div class="section-body">
+        <div class="bullet-item">Behandl hver omgang som om det er kamp. Ingen halvhjertede runder. Ingen autopilot.</div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>POST-TRÆNING LOG</div>
+      <div class="section-body">
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Hvad gik godt teknisk?</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Hvad tog skade / hvad undgik du?</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Ét konkret punkt at arbejde på fredag under sparring</div></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>GOLF-ALBUE</div>
+      <div class="section-body">
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Wraps altid — ingen undtagelse</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Slag på sæk maks 70% kraft</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Is 10 min post-træning hvis øm</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FREDAG -->
+<div class="page" id="page-fredag">
+  <div class="detail-header">
+    <button class="back-btn" onclick="goHome()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Tilbage
+    </button>
+    <div class="detail-day">Fredag</div>
+    <div class="detail-title">15 Runder Sparring</div>
+  </div>
+  <div class="detail-body">
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>PRE-SPARRING — 10 MIN</div>
+      <div class="section-body">
+        <div class="circuit-box">  3 min  —  Shadow (opvarmning)
+  3 min  —  Sæk (70–80%)
+  2 min  —  Footwork drills
+  2 min  —  Åndedræt + mentalt fokus</div>
+        <button class="timer-main-btn" style="margin-top:10px;border-radius:10px;height:44px;font-size:14px" onclick="quickTimer(10)">⏱ Start 10 min pre-timer</button>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>UNDER SPARRINGEN</div>
+      <div class="section-body">
+        <div class="bullet-item">Vælg ÉT teknisk fokuspunkt fra din torsdag-log. Arbejd bevidst med det i 3–4 runder, så fri teknik.</div>
+        <div style="margin-top:6px; font-size:13px; color:var(--muted);">Eksempler:</div>
+        <div class="bullet-item" style="font-size:13px;color:var(--muted)">"Jeg tester teepen som distancekontrol"</div>
+        <div class="bullet-item" style="font-size:13px;color:var(--muted)">"Jeg holder hænderne oppe efter kombinationer"</div>
+        <div class="bullet-item" style="font-size:13px;color:var(--muted)">"Jeg clincher ud af hjørner"</div>
+        <button class="timer-main-btn" style="margin-top:10px;border-radius:10px;height:44px;font-size:14px" onclick="showTimer()">⏱ Åbn rundetimer</button>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>POST-SPARRING — 10 MIN</div>
+      <div class="section-body">
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">5 min stretch: hofter, skuldre, nakke, lægge</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Golf-albue protokol</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Mental debrief: hvad virkede, hvad skal fixes</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LØRDAG -->
+<div class="page" id="page-lordag">
+  <div class="detail-header">
+    <button class="back-btn" onclick="goHome()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Tilbage
+    </button>
+    <div class="detail-day">Lørdag</div>
+    <div class="detail-title">Solo Kondition + Teknik</div>
+  </div>
+  <div class="detail-body">
+    <div class="info-box yellow" style="margin:0">Ingen instruktør. Ingen partnere. Bare dig og intentionen.</div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>DEL 1 — SJIPPETOV 15 MIN</div>
+      <div class="section-body">
+        <div class="circuit-box">3 x 5 MINUTTER:
+
+  Min 1–2:  Grundtempo
+  Min 3–4:  Øget tempo / hoppe-skift
+  Min 5:    Sprint pace — alt hvad du har
+
+Pause: 45 sek mellem rounds</div>
+        <button class="timer-main-btn" style="margin-top:10px;border-radius:10px;height:44px;font-size:14px" onclick="showTimer()">⏱ Åbn rundetimer</button>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>DEL 2 — SÆKWORK 3 x 5 MIN</div>
+      <div class="section-body">
+        <div class="bullet-item">Round 1: Kun jab-cross-hook. 100 kombinationer. Tæl dem.</div>
+        <div class="bullet-item">Round 2: Spark kun — low, mid, high. Skift ben efter 30 sek.</div>
+        <div class="bullet-item">Round 3: Fri — men HVERT 30. sek: 5 explosive knæ mod sækken.</div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>DEL 3 — SHADOW 2 x 3 MIN</div>
+      <div class="section-body">
+        <div class="bullet-item">Round 1: Du er angriber. Press forward, combo efter combo.</div>
+        <div class="bullet-item">Round 2: Du er counter-fighter. Back up, slip, counter.</div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>DEL 4 — KONDITIONSFINISHER</div>
+      <div class="section-body">
+        <div class="circuit-box">10-8-6-4-2 LADDER (ingen pause):
+
+  •  Burpees
+  •  Med. bold slam (3–4 kg)
+  •  Jump squats</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SØNDAG -->
+<div class="page" id="page-sondag">
+  <div class="detail-header">
+    <button class="back-btn" onclick="goHome()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Tilbage
+    </button>
+    <div class="detail-day">Søndag</div>
+    <div class="detail-title">REST</div>
+  </div>
+  <div class="detail-body">
+    <div class="info-box green" style="margin:0">Søvn, mad, mental restitution. Det er her kroppen tilpasser sig.</div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>PRIORITETER</div>
+      <div class="section-body">
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Sov 7–9 timer</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Spis tilstrækkeligt protein (2 g/kg minimum)</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Hydration — minimum 2–3 liter vand</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Ingen hård træning — max let gang</div></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-header"><div class="dot"></div>UGENTLIG REVIEW</div>
+      <div class="section-body">
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Hvad var dit tekniske fokuspunkt — sad det bedre?</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Holdt konditionsniveauet i runde 10–15?</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-text">Hvad er næste uges fokuspunkt? Skriv det ned.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     TIMER PAGE
+════════════════════════════════════════════════ -->
+<div class="page" id="page-timer">
+  <div style="padding: 20px 16px 0">
+    <div style="font-size:22px;font-weight:900;margin-bottom:4px">Rundetimer</div>
+    <div style="font-size:13px;color:var(--muted)">Konfigurer og start din timer</div>
+  </div>
+  <div style="padding:16px">
+    <div class="timer-settings">
+      <div class="setting-row">
+        <div><div class="setting-label">Runder</div><div class="setting-sub">Antal work-runder</div></div>
+        <div class="stepper">
+          <button class="stepper-btn" onclick="adjustSetting('rounds',-1)">−</button>
+          <div class="stepper-val" id="val-rounds">5</div>
+          <button class="stepper-btn" onclick="adjustSetting('rounds',1)">+</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Work</div><div class="setting-sub">Sekunder pr. runde</div></div>
+        <div class="stepper">
+          <button class="stepper-btn" onclick="adjustSetting('work',-15)">−</button>
+          <div class="stepper-val" id="val-work">180</div>
+          <button class="stepper-btn" onclick="adjustSetting('work',15)">+</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Pause</div><div class="setting-sub">Sekunder hvile</div></div>
+        <div class="stepper">
+          <button class="stepper-btn" onclick="adjustSetting('rest',-15)">−</button>
+          <div class="stepper-val" id="val-rest">60</div>
+          <button class="stepper-btn" onclick="adjustSetting('rest',15)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="timer-display">
+      <div class="timer-phase work" id="timer-phase">WORK</div>
+      <div class="timer-time" id="timer-time">3:00</div>
+      <div class="timer-round" id="timer-round">Runde 1 / 5</div>
+      <div class="timer-progress">
+        <div class="timer-progress-bar" id="timer-bar" style="width:100%"></div>
+      </div>
+    </div>
+
+    <div class="round-dots" id="round-dots"></div>
+
+    <div class="timer-controls" style="margin-top:16px">
+      <button class="timer-main-btn" id="start-btn" onclick="toggleTimer()">START</button>
+      <button class="timer-reset-btn" onclick="resetTimer()">↺</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     KPI / MÅL PAGE
+════════════════════════════════════════════════ -->
+<div class="page" id="page-kpi">
+  <div class="page-section-title">Mål & <span>KPI</span></div>
+  <div class="page-sub">Sådan ved du at programmet virker. Test dig selv hver søndag.</div>
+
+  <div class="kpi-card">
+    <div class="kpi-week">UGE 2</div>
+    <div class="kpi-text">Du mærker ét teknisk punkt sidder bedre end uge 1</div>
+  </div>
+  <div class="kpi-card blue">
+    <div class="kpi-week">UGE 4</div>
+    <div class="kpi-text">Dine runder 10–15 holder samme intensitet som runde 1–5</div>
+  </div>
+  <div class="kpi-card green">
+    <div class="kpi-week">UGE 6</div>
+    <div class="kpi-text">Konditionsniveauet er ikke længere din begrænsning — kun teknikken</div>
+  </div>
+  <div class="kpi-card yellow">
+    <div class="kpi-week">UGE 8</div>
+    <div class="kpi-text">Du er klar til at sætte en kamp i kalenderen</div>
+  </div>
+
+  <div style="padding: 24px 16px 10px; font-size:22px; font-weight:900">Golf-albue <span style="color:var(--accent)">Protokol</span></div>
+  <div class="elbow-section">
+    <div class="elbow-header">GØR ALTID</div>
+    <div class="elbow-body">
+      <div class="bullet-item" style="color:var(--green)">Wraps ALTID — ingen undtagelse</div>
+      <div class="bullet-item" style="color:var(--green)">Slag maks 70% kraft</div>
+      <div class="bullet-item" style="color:var(--green)">Eccentric wrist curl 3x15 dagligt</div>
+      <div class="bullet-item" style="color:var(--green)">Is 10 min post-træning hvis øm</div>
+      <div class="bullet-item" style="color:var(--green)">Wrist flexor stretch 3x30 sek</div>
+    </div>
+  </div>
+  <div class="elbow-section" style="margin-top:0">
+    <div class="elbow-header" style="background:rgba(233,69,96,0.12);color:var(--accent)">UNDGÅ</div>
+    <div class="elbow-body">
+      <div class="bullet-item" style="color:var(--accent)">Tunge rows eller lat pulldown</div>
+      <div class="bullet-item" style="color:var(--accent)">Heavy bicep curls med håndled i spænd</div>
+      <div class="bullet-item" style="color:var(--accent)">Hårde slag uden opvarmning</div>
+      <div class="bullet-item" style="color:var(--accent)">Træning hvis albuen forværres</div>
+    </div>
+  </div>
+
+  <div style="padding:20px 16px;text-align:center">
+    <div style="font-size:18px;font-weight:900;color:var(--accent)">Start mandag.</div>
+    <div style="font-size:13px;color:var(--muted);margin-top:6px">Skriv dit tekniske fokuspunkt ned. Eksekver. Evaluer søndag.</div>
+  </div>
+</div>
+
+<script>
+// ── NAVIGATION ──────────────────────────────────────────
+let currentPage = 'home';
+
+function switchTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  currentPage = tab;
+  window.scrollTo(0,0);
+}
+
+function showDay(day) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + day).classList.add('active');
+  document.getElementById('tab-home').classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function goHome() {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-home').classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function showTimer() {
+  switchTab('timer');
+}
+
+// ── CHECKLIST ───────────────────────────────────────────
+function toggleCheck(el) {
+  el.classList.toggle('done');
+  if (navigator.vibrate) navigator.vibrate(20);
+}
+
+// ── TIMER ───────────────────────────────────────────────
+let timerSettings = { rounds: 5, work: 180, rest: 60 };
+let timerState = { running: false, phase: 'work', round: 1, remaining: 180, interval: null, totalPhase: 180 };
+
+function adjustSetting(key, delta) {
+  const mins = { rounds: [1, 30], work: [15, 600], rest: [0, 300] };
+  timerSettings[key] = Math.max(mins[key][0], Math.min(mins[key][1], timerSettings[key] + delta));
+  document.getElementById('val-' + key).textContent = timerSettings[key];
+  resetTimer();
+}
+
+function resetTimer() {
+  clearInterval(timerState.interval);
+  timerState = { running: false, phase: 'work', round: 1, remaining: timerSettings.work, interval: null, totalPhase: timerSettings.work };
+  updateTimerDisplay();
+  document.getElementById('start-btn').textContent = 'START';
+  document.getElementById('start-btn').classList.remove('paused');
+  buildRoundDots();
+}
+
+function toggleTimer() {
+  if (timerState.running) {
+    clearInterval(timerState.interval);
+    timerState.running = false;
+    document.getElementById('start-btn').textContent = 'FORTSÆT';
+    document.getElementById('start-btn').classList.add('paused');
+  } else {
+    timerState.running = true;
+    document.getElementById('start-btn').textContent = 'PAUSE';
+    document.getElementById('start-btn').classList.remove('paused');
+    timerState.interval = setInterval(tick, 1000);
+  }
+}
+
+function tick() {
+  timerState.remaining--;
+  if (timerState.remaining < 0) {
+    // Switch phase
+    if (timerState.phase === 'work') {
+      if (timerState.round >= timerSettings.rounds) {
+        // Done
+        clearInterval(timerState.interval);
+        timerState.running = false;
+        timerState.remaining = 0;
+        document.getElementById('start-btn').textContent = 'FÆRDIG ✓';
+        document.getElementById('start-btn').classList.add('paused');
+        markRoundDone(timerState.round);
+        updateTimerDisplay();
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+        return;
+      }
+      timerState.phase = 'rest';
+      timerState.remaining = timerSettings.rest;
+      timerState.totalPhase = timerSettings.rest;
+      markRoundDone(timerState.round);
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    } else {
+      timerState.round++;
+      timerState.phase = 'work';
+      timerState.remaining = timerSettings.work;
+      timerState.totalPhase = timerSettings.work;
+      setCurrentRoundDot(timerState.round);
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    }
+  }
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerState.remaining / 60);
+  const s = timerState.remaining % 60;
+  document.getElementById('timer-time').textContent = m + ':' + String(s).padStart(2,'0');
+  const phaseEl = document.getElementById('timer-phase');
+  const barEl = document.getElementById('timer-bar');
+  if (timerState.phase === 'work') {
+    phaseEl.textContent = 'WORK';
+    phaseEl.className = 'timer-phase work';
+    barEl.className = 'timer-progress-bar';
+  } else {
+    phaseEl.textContent = 'HVILE';
+    phaseEl.className = 'timer-phase rest';
+    barEl.className = 'timer-progress-bar rest-bar';
+  }
+  document.getElementById('timer-round').textContent = 'Runde ' + timerState.round + ' / ' + timerSettings.rounds;
+  const pct = timerState.totalPhase > 0 ? (timerState.remaining / timerState.totalPhase * 100) : 0;
+  barEl.style.width = pct + '%';
+}
+
+function buildRoundDots() {
+  const container = document.getElementById('round-dots');
+  container.innerHTML = '';
+  for (let i = 1; i <= timerSettings.rounds; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'round-dot' + (i === 1 ? ' current' : '');
+    dot.id = 'rdot-' + i;
+    container.appendChild(dot);
+  }
+}
+
+function markRoundDone(round) {
+  const el = document.getElementById('rdot-' + round);
+  if (el) { el.classList.remove('current'); el.classList.add('done'); }
+}
+
+function setCurrentRoundDot(round) {
+  const el = document.getElementById('rdot-' + round);
+  if (el) el.classList.add('current');
+}
+
+function quickTimer(minutes) {
+  timerSettings.rounds = 1;
+  timerSettings.work = minutes * 60;
+  timerSettings.rest = 0;
+  document.getElementById('val-rounds').textContent = 1;
+  document.getElementById('val-work').textContent = minutes * 60;
+  document.getElementById('val-rest').textContent = 0;
+  switchTab('timer');
+  resetTimer();
+}
+
+// Init
+buildRoundDots();
+updateTimerDisplay();
+</script>
+
+</body>
+</html>
